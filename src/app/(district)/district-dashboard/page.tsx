@@ -2,8 +2,14 @@ import { AddRegion } from "./add-region";
 import dbConnect from "@/lib/db-connect";
 import { Region } from "@/models/region";
 import { RegionTable } from "./region-table";
+import { getLoggedInUser } from "@/services/user/get-logged-in-user";
+import { redirect } from "next/navigation";
 
 export default async function DistrictDashboard() {
+  const { user } = await getLoggedInUser();
+
+  if (!user || user.role !== "district") return redirect("/");
+
   await dbConnect();
   const regions = await Region.find().populate("coordinator");
 
