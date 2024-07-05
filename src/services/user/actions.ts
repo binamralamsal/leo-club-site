@@ -2,8 +2,10 @@
 
 import { signIn } from "@/lib/auth";
 import dbConnect from "@/lib/db-connect";
+import { Club } from "@/models/club";
 import { Region } from "@/models/region";
 import { IUser, User } from "@/models/user";
+import { clubSchema } from "@/validators/club.schema";
 import { regionSchema } from "@/validators/region.schema";
 import { registerSchema } from "@/validators/user.schema";
 import { genSalt, hash } from "bcryptjs";
@@ -100,6 +102,55 @@ export async function createRegion({
   } catch (err) {
     console.log(err);
     return { error: "Unable to create region, please try again." };
+  }
+}
+
+export async function createClub({
+  presidentEmail,
+  presidentName,
+  presidentPassword,
+  ...data
+}: z.infer<typeof clubSchema> & { region: string }) {
+  await dbConnect();
+
+  try {
+    const user = await User.findOne({ email: presidentEmail });
+    if (user)
+      return {
+        error:
+          "User with that email address already exists. Please enter a different email address.",
+      };
+
+    const president = await User.create({
+      email: presidentEmail,
+      name: presidentName,
+      password: presidentPassword,
+    });
+
+    const region = await Region.findOne({ name: data.name });
+    if (region)
+      return {
+        error:
+          "Club with that name already exists, Please enter a different club name.",
+      };
+
+    const newClub = await Club.create({
+      ...data,
+      president: president._id,
+    });
+
+    await Region.findByIdAndUpdate(
+      region,
+      { $push: { clubs: newClub._id } },
+      { new: true, useFindAndModify: false }
+    );
+
+    revalidatePath("/region-dashboard");
+
+    return { message: "Club created successfully" };
+  } catch (err) {
+    console.log(err);
+    return { error: "Unable to create club, please try again." };
   }
 }
 

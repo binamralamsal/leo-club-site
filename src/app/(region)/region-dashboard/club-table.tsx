@@ -14,21 +14,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Club, IClub } from "@/models/club";
 import { IRegion, Region } from "@/models/region";
 import { MoreHorizontal } from "lucide-react";
-import { Document } from "mongoose";
 import { revalidatePath } from "next/cache";
 import Image from "next/image";
 
-export async function RegionTable({
-  regions,
-}: {
-  regions: (Document<unknown, {}, IRegion> &
-    IRegion &
-    Required<{
-      _id: unknown;
-    }>)[];
-}) {
+export async function ClubTable({ clubs }: { clubs: IClub[] }) {
   return (
     <Card>
       <CardContent>
@@ -38,33 +30,29 @@ export async function RegionTable({
               <TableHead>S.n.</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Logo</TableHead>
-              <TableHead>No. of Clubs</TableHead>
-              <TableHead className="hidden md:table-cell">
-                Coordinator
-              </TableHead>
+              <TableHead className="hidden md:table-cell">President</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
               </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {regions.map((region, index) => (
-              <TableRow key={(region._id as string).toString() as string}>
+            {clubs.map((club, index) => (
+              <TableRow key={(club._id as string).toString() as string}>
                 <TableCell>{index + 1}</TableCell>
-                <TableCell className="font-medium">{region.name}</TableCell>
+                <TableCell className="font-medium">{club.name}</TableCell>
                 <TableCell className="font-medium">
                   <Image
-                    src={region.logo}
+                    src={club.logo}
                     alt="Logo"
                     height={200}
                     width={200}
                     className="w-auto h-8"
                   />
                 </TableCell>
-                <TableCell>{region.clubs.length}</TableCell>
                 <TableCell className="hidden md:table-cell">
                   {/* @ts-ignore */}
-                  {region.coordinator.name}
+                  {club.president.name}
                 </TableCell>
 
                 <TableCell>
@@ -77,14 +65,11 @@ export async function RegionTable({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <form
-                        action={async function () {
+                        action={async () => {
                           "use server";
 
-                          await Region.deleteOne({
-                            // @ts-ignore
-                            _id: region._id.toString(),
-                          });
-                          revalidatePath("/district-dashboard");
+                          await Club.deleteOne({ _id: club._id });
+                          revalidatePath("/region-dashboard");
                         }}
                       >
                         <DropdownMenuItem asChild>
